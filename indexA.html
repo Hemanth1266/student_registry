@@ -1,0 +1,128 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width,initial-scale=1">
+<title>Student Results Entry</title>
+<style>
+body {
+  font-family: 'Poppins', sans-serif;
+  background: linear-gradient(135deg,#89f7fe,#66a6ff);
+  display: flex; justify-content: center; align-items: center;
+  height: 100vh; margin: 0; transition: background 0.6s;
+}
+.container {
+  background: #fff; padding: 30px; border-radius: 20px;
+  box-shadow: 0 8px 25px rgba(0,0,0,0.25);
+  width: 90%; max-width: 500px;
+  animation: floatIn 0.8s ease-out;
+}
+@keyframes floatIn {
+  from {transform: translateY(50px); opacity: 0;}
+  to {transform: translateY(0); opacity: 1;}
+}
+h1{text-align:center;color:#333;letter-spacing:1px;}
+label{display:block;margin-top:10px;font-weight:600;color:#444;}
+input{width:100%;padding:8px;margin-top:5px;border-radius:8px;border:1px solid #ccc;transition:0.3s;}
+input:focus{border-color:#66a6ff;outline:none;box-shadow:0 0 5px #66a6ff;}
+button{padding:10px 15px;border:none;border-radius:8px;font-weight:bold;cursor:pointer;transition:transform 0.2s,background 0.3s;}
+button:hover{transform:scale(1.05);}
+.btn-save{background:#28a745;color:#fff;}
+.btn-update{background:#20c997;color:#fff;}
+.btn-clear{background:#ffc107;color:#333;}
+.btn-view{background:#007bff;color:#fff;}
+.actions{display:flex;justify-content:center;gap:10px;margin-top:15px;flex-wrap:wrap;}
+</style>
+</head>
+<body>
+<div class="container">
+<h1 id="formTitle">Student Entry Form</h1>
+<form id="studentForm">
+  <label>Reg. No:</label><input type="text" id="regno" required>
+  <label>Name:</label><input type="text" id="name" required>
+  <label>Subject 1:</label><input type="number" id="s1" required>
+  <label>Subject 2:</label><input type="number" id="s2" required>
+  <label>Subject 3:</label><input type="number" id="s3" required>
+  <label>Photo:</label><input type="file" id="photo" accept="image/*">
+  <div class="actions">
+    <button type="submit" id="saveBtn" class="btn-save">Save</button>
+    <button type="button" class="btn-clear" id="clearBtn">Clear</button>
+    <button type="button" class="btn-view" id="viewBtn">View Results</button>
+  </div>
+</form>
+</div>
+<script>
+const regnoInput=document.getElementById('regno');
+const nameInput=document.getElementById('name');
+const s1Input=document.getElementById('s1');
+const s2Input=document.getElementById('s2');
+const s3Input=document.getElementById('s3');
+const photoInput=document.getElementById('photo');
+const saveBtn=document.getElementById('saveBtn');
+const formTitle=document.getElementById('formTitle');
+
+function loadData(){return JSON.parse(localStorage.getItem('records')||'{}');}
+function saveData(d){localStorage.setItem('records',JSON.stringify(d));}
+function calcResult(s1,s2,s3){return(s1>=40&&s2>=40&&s3>=40)?'Pass':'Fail';}
+function encodeImage(file,callback){const r=new FileReader();r.onload=()=>callback(r.result);r.readAsDataURL(file);}
+
+let editMode=false,editRegno=null;
+
+window.onload=()=>{
+  const er=localStorage.getItem('editRegno');
+  if(er){
+    const data=loadData();
+    if(data[er]){
+      const r=data[er];
+      regnoInput.value=r.regno; nameInput.value=r.name;
+      s1Input.value=r.s1; s2Input.value=r.s2; s3Input.value=r.s3;
+      regnoInput.disabled=true;
+      saveBtn.textContent='Save Changes';
+      saveBtn.className='btn-update';
+      formTitle.textContent='Edit Student Record';
+      editMode=true; editRegno=er;
+    }
+    localStorage.removeItem('editRegno');
+  }
+};
+
+document.getElementById('studentForm').addEventListener('submit',e=>{
+  e.preventDefault();
+  const regno=regnoInput.value.trim(),name=nameInput.value.trim();
+  const s1=Number(s1Input.value),s2=Number(s2Input.value),s3=Number(s3Input.value);
+  if(!regno||!name){alert('Please fill all fields');return;}
+  const data=loadData();
+
+  const saveRecord=(img)=>{
+    data[regno]={regno,name,s1,s2,s3,result:calcResult(s1,s2,s3),photo:img||data[regno]?.photo||''};
+    saveData(data);
+    alert(editMode?'Student Updated!':'Student Saved!');
+    document.getElementById('studentForm').reset();
+    regnoInput.disabled=false;
+    saveBtn.textContent='Save';
+    saveBtn.className='btn-save';
+    formTitle.textContent='Student Entry Form';
+    editMode=false;
+  };
+
+  if(photoInput.files[0]){
+    encodeImage(photoInput.files[0],img=>saveRecord(img));
+  }else saveRecord();
+});
+
+document.getElementById('clearBtn').addEventListener('click',()=>{
+  document.getElementById('studentForm').reset();
+  regnoInput.disabled=false;
+  saveBtn.textContent='Save';
+  saveBtn.className='btn-save';
+  formTitle.textContent='Student Entry Form';
+  editMode=false;
+});
+
+document.getElementById('viewBtn').addEventListener('click',()=>{
+  window.open('results.html','_self');
+});
+
+</script>
+</body>
+</html>
